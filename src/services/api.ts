@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios'
 import { parseCookies, setCookie } from 'nookies'
 import { signOut } from '../contexts/AuthContext'
+import { AuthTokenError } from './errors/AuthTokenError'
 
 let isRefreshing = false
 let failedRequestsQueue: { 
@@ -30,8 +31,6 @@ let cookies = parseCookies(ctx)
       if (!isRefreshing) {
         isRefreshing = true
         
-        console.log('refresh')
-
         api.post('/refresh', {
           refreshToken
         }).then(response => {
@@ -55,7 +54,9 @@ let cookies = parseCookies(ctx)
           failedRequestsQueue.forEach(request => request.onFailure(err))
           failedRequestsQueue = []
   
-          if (process.browser) signOut()
+          if (process.browser) {
+            signOut()
+          } 
           
         }).finally(() => {
           isRefreshing = false
@@ -75,7 +76,11 @@ let cookies = parseCookies(ctx)
         })
       })
     } else {
-      if (process.browser) signOut()
+      if (process.browser) {
+        signOut()
+      } else {
+        return Promise.reject(new AuthTokenError())
+      }
     }
   
     return Promise.reject(error)
